@@ -1,135 +1,154 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Jubaland Sites – GPS Dots Map</title>
-
-  <!-- Tailwind -->
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Jubaland Site Locations Map</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    #map { height: 100%; min-height: 420px; }
+    #map { height: 100%; min-height: 500px; }
   </style>
 </head>
 <body class="bg-slate-100">
-  <div id="app" class="h-screen grid md:grid-cols-[360px_1fr]">
+  <div class="h-screen grid md:grid-cols-[360px_1fr]">
     <!-- Sidebar -->
     <aside class="bg-white border-r border-slate-200 p-4 flex flex-col gap-4 overflow-y-auto">
       <header>
-        <h1 class="text-xl font-bold text-slate-800">Jubaland Sites – GPS Dots</h1>
-        <p class="text-sm text-slate-500">MoEWR-JSS & Line Ministries Sites (Water/Meat/Agriculture).</p>
+        <h1 class="text-xl font-bold text-slate-800">📍 Jubaland Site Locations</h1>
+        <p class="text-xs text-slate-500">Ministry of Energy & Water Resources – GIS Dashboard</p>
       </header>
 
-      <div class="space-y-3">
-        <button id="locateMe"
-          class="w-full rounded-xl bg-blue-600 px-4 py-2 text-white font-semibold shadow hover:bg-blue-500">
-          Use My GPS Location
-        </button>
-      </div>
+      <button id="locateMe" class="w-full bg-blue-600 text-white rounded-lg py-2 font-semibold hover:bg-blue-500">
+        Use My GPS Location
+      </button>
 
-      <div class="mt-2">
-        <h2 class="text-sm font-semibold text-slate-600 mb-2">Locations (click “Zoom”)</h2>
+      <div>
+        <h2 class="text-sm font-semibold text-slate-600 mb-2">Sites List</h2>
         <ul id="pointsList" class="space-y-2 text-sm text-slate-700"></ul>
       </div>
-
-      <footer class="mt-auto text-xs text-slate-400">
-        Tip: For GPS, open this page via <b>http://localhost</b> or <b>https://</b> (not file://).
-      </footer>
     </aside>
 
     <!-- Map -->
-    <main class="relative h-full">
-      <div id="map" class="absolute inset-0 h-full"></div>
+    <main class="relative">
+      <div id="map" class="absolute inset-0"></div>
     </main>
   </div>
 
   <script>
-    // --- All Jubaland Sites from Excel ---
+    // ✅ Paste your Kobo data rows here — sample extracted from your sheet
+    // const sites = [
+    //   { region: "Gedo", district: "Luuq", name: "Hanoy", type: "Private", activity: "Agriculture", lat: 3.746533, lng: 42.543454 },
+    //   { region: "Lower Juba", district: "Kismayo", name: "Bula gadud", type: "Public", activity: "Agriculture", lat: -0.079577, lng: 42.582867 },
+    //   { region: "Lower Juba", district: "Kismayo", name: "Yontoy", type: "Public", activity: "Agriculture", lat: -0.116379, lng: 42.566776 },
+    //   { region: "Lower Juba", district: "Kismayo", name: "Fanole,Kismayo", type: "Community", activity: "Fishery", lat: -0.368683, lng: 42.550887 },
+    //   { region: "Gedo", district: "Bardere", name: "Bardere", type: "Public", activity: "Livestock Activity", lat: 2.336019, lng: 42.285309 },
+    //   { region: "Gedo", district: "Dollow", name: "Dollow", type: "Public", activity: "Livestock Activity", lat: 4.16484, lng: 42.090664 },
+    //   { region: "Gedo", district: "Garbaharey", name: "Garbaharey town", type: "Public", activity: "Livestock Activity", lat: 3.331583, lng: 42.220376 },
+    //   { region: "Gedo", district: "Luuq", name: "Luuq town", type: "Public", activity: "Livestock Activity", lat: 3.795055, lng: 42.544286 },
+    //   { region: "Lower Juba", district: "Kismayo", name: "Makka village", type: "Private", activity: "Agriculture", lat: -0.152765, lng: 42.566922 },
+    //   { region: "Jubaland", district: "Afmadow", name: "Dhobley", type: "Private", activity: "Livestock Activity", lat: 0.409597, lng: 41.012437 }
+    //   // ⬆️ Add the remaining rows here (can be generated from Excel automatically)
+    // ];
+
     const sites = [
-      { region: "Gedo", district: "Bardere", siteName: "Bardere Meat Market", lat: 2.336019, lng: 42.285309 },
-      { region: "Gedo", district: "Dollow", siteName: "Dollow Meat Market", lat: 4.164040, lng: 42.090664 },
-      { region: "Gedo", district: "Garbaharey", siteName: "Garbaharey Meat Market", lat: 3.331583, lng: 42.220376 },
-      { region: "Gedo", district: "Luuq", siteName: "Luuq Milk Market", lat: 3.795055, lng: 42.544286 },
-      { region: "Gedo", district: "Dollow", siteName: "Dollow Milk Market", lat: 4.163188, lng: 42.075776 },
-      { region: "Gedo", district: "Luuq", siteName: "Hanoy", lat: 3.746533, lng: 42.543454 },
-      { region: "Gedo", district: "Bardere", siteName: "Qalaliyow", lat: 2.352431, lng: 42.280226 },
+  { region: "Lower Juba", district: "Kismayo", name: "Bula gadud", type: "Public", activity: "Agriculture", lat: -0.079577, lng: 42.582867 },
+  { region: "Lower Juba", district: "Kismayo", name: "Yontoy", type: "Public", activity: "Agriculture", lat: -0.116379, lng: 42.566776 },
+  { region: "Lower Juba", district: "Kismayo", name: "Yontoy", type: "Public", activity: "Agriculture", lat: -0.121534, lng: 42.55935 },
+  { region: "Lower Juba", district: "Kismayo", name: "Yasin yusuf- qamqam", type: "Public", activity: "Agriculture", lat: -0.16805, lng: 42.58636 },
+  { region: "Lower Jubba", district: "Kismayo", name: "Fanole,Kismayo", type: "Community", activity: "Fishery", lat: -0.368683, lng: 42.550887 },
+  { region: "Lower Jubba", district: "Kismayo", name: "Calanley,Kismayo", type: "Private", activity: "Fishery", lat: -0.36593, lng: 42.541585 },
+  { region: "Lower Juba", district: "Kismayo", name: "Kheyrow jelle qolati -qamqam", type: "Public", activity: "Agriculture", lat: -0.16597, lng: 42.593612 },
+  { region: "Lower Juba", district: "Kismayo", name: "Haji weyne", type: "Public", activity: "Agriculture", lat: -0.177828, lng: 42.581615 },
+  { region: "Lower Jubba", district: "Kismayo", name: "Calanley,Kismayo", type: "Private", activity: "Livestock Activity", lat: -0.380128, lng: 42.51752 },
+  { region: "Lower Jubba", district: "Kismayo", name: "Calanley,Kismayo", type: "Public", activity: "Livestock Activity", lat: -0.363684, lng: 42.528792 },
+  { region: "Lower Juba", district: "Kismayo", name: "Jana Cabdalle", type: "Private", activity: "Agriculture", lat: 0.047222, lng: 42.395278 },
+  { region: "Lower Jubba", district: "Kismayo", name: "Jana Cabdalle", type: "Private", activity: "Agriculture", lat: 0.048464, lng: 42.391884 },
+  { region: "Lower Jubba", district: "Kismayo", name: "Jana Cabdalle", type: "Private", activity: "Agriculture", lat: 0.064563, lng: 42.347401 },
+  { region: "Lower Jubba", district: "Kismayo", name: "Jana Cabdalle", type: "Private", activity: "Agriculture", lat: 0.056848, lng: 42.329496 },
+  { region: "Lower Jubba", district: "Kismayo", name: "Jana Cabdalle", type: "Private", activity: "Agriculture", lat: 0.051347, lng: 42.310346 },
+  { region: "Lower Juba", district: "Kismayo", name: "Jana Cabdalle", type: "Private", activity: "Agriculture", lat: -0.050833, lng: 42.549549 },
+  { region: "Lower Juba", district: "Kismayo", name: "Jana Cabdalle", type: "Private", activity: "Agriculture", lat: 0.004683, lng: 42.454554 },
+  { region: "Lower Jubba", district: "Kismayo", name: "Yoontoy", type: "Public", activity: "Agriculture", lat: -0.144167, lng: 42.561667 },
+  { region: "Lower Juba", district: "Kismayo", name: "Yoontoy", type: "Private", activity: "Agriculture", lat: -0.19687, lng: 42.583818 },
+  { region: "Lower Juba", district: "Kismayo", name: "Makka village", type: "Private", activity: "Agriculture", lat: -0.152765, lng: 42.566922 },
+  { region: "Lower Juba", district: "Kismayo", name: "Jana Cabdalle", type: "Private", activity: "Agriculture", lat: 0.061923, lng: 42.352618 },
+  { region: "Lower Juba", district: "Kismayo", name: "Jana Cabdalle", type: "Private", activity: "Agriculture", lat: 0.057523, lng: 42.340128 },
+  { region: "Lower Jubba", district: "Badhaadhe district", name: "Raskamboni", type: "Private", activity: "WASH", lat: 1.389035, lng: 41.345896 },
+  { region: "J/hoose", district: "Kismayo", name: "H/weyne", type: "Public", activity: "Water Point", lat: -0.3776711, lng: 42.2972764 },
+  { region: "J/hoose", district: "Kismaio", name: "H/weyne", type: "Public", activity: "Water Point", lat: -0.3772358, lng: 42.2958043 },
+  { region: "J/hoose", district: "Kimaio", name: "H/weyne", type: "Public", activity: "Water Point", lat: -0.3717312, lng: 42.2990755 },
+  { region: "J/hoose", district: "Kismaio", name: "H/weyne", type: "Public", activity: "Water Point", lat: -0.3740031, lng: 42.2956854 },
+  { region: "J/hoose", district: "Kismaio", name: "H/weyne", type: "Public", activity: "Water Point", lat: -0.3785658, lng: 42.3008819 },
+  { region: "J/hoose", district: "Kismaio", name: "H/weyne", type: "Public", activity: "Water Point", lat: -0.3737557, lng: 42.3026988 },
+  { region: "Gedo", district: "Luuq", name: "Hanoy", type: "Private", activity: "Agriculture", lat: 3.746533, lng: 42.543454 },
+  { region: "Gedo", district: "Bardere", name: "Bardere", type: "Public", activity: "Livestock Activity", lat: 2.336019, lng: 42.285309 },
+  { region: "Gedo", district: "Dollow", name: "Dollow", type: "Public", activity: "Livestock Activity", lat: 4.16484, lng: 42.090664 },
+  { region: "Gedo", district: "Garbaharey", name: "Garbaharey town", type: "Public", activity: "Livestock Activity", lat: 3.331583, lng: 42.220376 },
+  { region: "Gedo", district: "Luuq", name: "Luuq town", type: "Public", activity: "Livestock Activity", lat: 3.795055, lng: 42.544286 },
+  { region: "Gedo", district: "Dollow", name: "Dollow town", type: "Public", activity: "Livestock Activity", lat: 4.163188, lng: 42.075776 },
+  { region: "Gedo", district: "Bardere", name: "Bardere", type: "Private", activity: "Agriculture", lat: 2.31814, lng: 42.126902 },
+  { region: "Gedo", district: "Bardere", name: "Bardere", type: "Private", activity: "Agriculture", lat: 2.352431, lng: 42.280226 },
+  { region: "Gedo", district: "Luuq", name: "Qasaale Village", type: "Private", activity: "Agriculture", lat: 3.841378, lng: 42.551892 }
 
-      { region: "Lower Juba", district: "Kismayo", siteName: "Kismayo Main Slaughter House", lat: -0.380132, lng: 42.517515 },
-      { region: "Lower Juba", district: "Kismayo", siteName: "Qeys Fishery Company (Fanole Fishing)", lat: -0.368840, lng: 42.550833 },
-      { region: "Lower Juba", district: "Kismayo", siteName: "Kibora Fishing Company", lat: -0.365837, lng: 42.541756 },
-      { region: "Lower Juba", district: "Afmadow", siteName: "Tacab Wadaag", lat: 0.057523, lng: 42.340128 },
-      { region: "Lower Juba", district: "Afmadow", siteName: "Jandash Argo Farm", lat: 0.061923, lng: 42.352618 },
-      { region: "Lower Juba", district: "Badhaadhe", siteName: "Badhaadhe Desalination Central", lat: 1.389348, lng: 41.345896 },
+];
 
-      { region: "Middle Juba", district: "Bu'aale", siteName: "Dhasheeg Cooperative For Agriculture, Livestock", lat: 0.047222, lng: 42.395278 },
-      { region: "Middle Juba", district: "Bu'aale", siteName: "Liban Mohamed Isse", lat: 3.841378, lng: 42.551892 },
-      { region: "Middle Juba", district: "Saakow", siteName: "Dhasheeg Cooperative Solutions", lat: -0.050833, lng: 42.549549 },
-      { region: "Middle Juba", district: "Jilib", siteName: "Gumar Farm", lat: 2.318140, lng: 42.126902 }
-    ];
 
-    // --- Map setup ---
-    const map = L.map('map', { zoomControl: true, attributionControl: true });
+    const map = L.map('map');
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 20,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+      attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    // Region color coding
-    const regionColors = {
-      "Gedo": "#2563eb",
-      "Lower Juba": "#16a34a",
-      "Middle Juba": "#9333ea"
-    };
-
+    const markers = [];
     const bounds = [];
-    const pointsList = document.getElementById('pointsList');
+    const listEl = document.getElementById('pointsList');
 
-    function addDotForSite(s) {
-      const color = regionColors[s.region] || "#2563eb";
-      const m = L.circleMarker([s.lat, s.lng], {
+    function addMarker(site) {
+      if (!site.lat || !site.lng) return;
+      const marker = L.circleMarker([site.lat, site.lng], {
         radius: 6,
         color: "#1f2937",
-        fillColor: color,
+        fillColor: "#2563eb",
         fillOpacity: 0.9,
         weight: 1
-      }).addTo(map).bindPopup(`
-        <div class="text-sm">
-          <div class="font-semibold">${s.siteName}</div>
-          <div class="text-slate-600">${s.district}, ${s.region}</div>
-          <div class="mt-1 text-slate-500">${s.lat.toFixed(6)}, ${s.lng.toFixed(6)}</div>
-        </div>`);
-
-      bounds.push([s.lat, s.lng]);
+      }).addTo(map)
+        .bindPopup(`
+          <div class="text-sm">
+            <div class="font-semibold">${site.name}</div>
+            <div>${site.district}, ${site.region}</div>
+            <div>${site.type} — ${site.activity}</div>
+            <div class="text-xs text-slate-500 mt-1">${site.lat.toFixed(5)}, ${site.lng.toFixed(5)}</div>
+          </div>
+        `);
+      markers.push(marker);
+      bounds.push([site.lat, site.lng]);
 
       const li = document.createElement('li');
-      li.className = "flex items-center justify-between gap-3 rounded-lg bg-slate-50 border border-slate-200 px-2 py-1";
+      li.className = "flex justify-between items-center rounded-lg bg-slate-50 border border-slate-200 px-2 py-1";
       li.innerHTML = `
-        <div class="min-w-0">
-          <div class="font-medium truncate">${s.siteName} – ${s.district}</div>
-          <div class="text-xs text-slate-500 truncate">${s.region} • ${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}</div>
+        <div class="truncate">
+          <div class="font-medium truncate">${site.name}</div>
+          <div class="text-xs text-slate-500 truncate">${site.region} — ${site.lat.toFixed(4)}, ${site.lng.toFixed(4)}</div>
         </div>
-        <button class="shrink-0 text-blue-600 hover:underline text-xs">Zoom</button>`;
+        <button class="text-blue-600 text-xs hover:underline">Zoom</button>
+      `;
       li.querySelector('button').addEventListener('click', () => {
-        map.setView([s.lat, s.lng], 14, { animate: true });
-        m.openPopup();
+        map.setView([site.lat, site.lng], 15, { animate: true });
+        marker.openPopup();
       });
-      pointsList.appendChild(li);
+      listEl.appendChild(li);
     }
 
-    sites.forEach(addDotForSite);
-
-    if (bounds.length) map.fitBounds(L.latLngBounds(bounds).pad(0.25));
-    else map.setView([2.33, 42.28], 7);
+    sites.forEach(addMarker);
+    if (bounds.length) map.fitBounds(bounds);
+    else map.setView([2.5, 42.3], 6);
 
     document.getElementById('locateMe').addEventListener('click', () => {
       if (!navigator.geolocation) return alert("Geolocation not supported.");
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        pos => {
           const { latitude, longitude } = pos.coords;
           const me = L.circleMarker([latitude, longitude], {
             radius: 7,
@@ -141,7 +160,7 @@
           me.bindPopup("<strong>You are here</strong>").openPopup();
           map.setView([latitude, longitude], 15, { animate: true });
         },
-        () => alert("Couldn't get your location. Use https:// or localhost."),
+        () => alert("Could not get your location"),
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     });
